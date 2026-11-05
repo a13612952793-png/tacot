@@ -13,3 +13,26 @@ document.querySelector('.task-tabs').addEventListener('keydown',event=>{const ta
 ['id','ood'].forEach(value=>document.getElementById(value+'-mode').addEventListener('click',()=>{mode=value;['id','ood'].forEach(v=>{const b=document.getElementById(v+'-mode');b.classList.toggle('active',v===mode);b.setAttribute('aria-pressed',String(v===mode));});renderChart();}));
 document.querySelectorAll('[data-task]').forEach(b=>b.tabIndex=b.getAttribute('aria-selected')==='true'?0:-1);renderTask();renderChart();
 
+
+// Retrieved pairs are already combined in each original presentation clip.
+document.querySelectorAll('[data-match]').forEach(button=>button.addEventListener('click',()=>{
+  const key=button.dataset.match;
+  document.querySelectorAll('[data-match]').forEach(b=>{const active=b===button;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;});
+  document.querySelectorAll('.match-panel').forEach(panel=>{panel.hidden=panel.id!=='match-panel-'+key;if(panel.hidden)panel.querySelectorAll('video').forEach(v=>v.pause());});
+}));
+document.querySelectorAll('[data-match]').forEach(b=>b.tabIndex=b.getAttribute('aria-selected')==='true'?0:-1);
+document.querySelector('.matching-tabs').addEventListener('keydown',event=>{
+  const tabs=[...document.querySelectorAll('[data-match]')],index=tabs.indexOf(document.activeElement);if(index<0)return;
+  let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;else if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;else if(event.key==='Home')next=0;else if(event.key==='End')next=tabs.length-1;else return;
+  event.preventDefault();tabs[next].focus();tabs[next].click();
+});
+const heroVideo=document.getElementById('hero-video'),playback=document.querySelector('.hero-playback');
+function updatePlayback(){playback.textContent=heroVideo.paused?'Play video ▷':'Pause video Ⅱ';playback.setAttribute('aria-label',heroVideo.paused?'Play background video':'Pause background video');}
+heroVideo.addEventListener('play',updatePlayback);heroVideo.addEventListener('pause',updatePlayback);
+playback.addEventListener('click',()=>{if(heroVideo.paused)heroVideo.play().catch(updatePlayback);else heroVideo.pause();});
+if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){heroVideo.autoplay=false;heroVideo.pause();}updatePlayback();
+const videoObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{const video=entry.target;if(!entry.isIntersecting&&!video.paused)video.pause();}),{threshold:0});
+document.querySelectorAll('video').forEach(v=>videoObserver.observe(v));
+document.getElementById('copy-citation').addEventListener('click',async()=>{
+  const status=document.getElementById('copy-status');try{await navigator.clipboard.writeText(document.getElementById('bibtex').textContent);status.textContent='Citation copied.';}catch{status.textContent='Select the citation above to copy it.';}
+});
